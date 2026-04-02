@@ -1,6 +1,4 @@
 local Module_Server = {}
-
--- ฟังก์ชันหลักสำหรับสร้าง List ผู้เล่น
 function Module_Server.RenderPlayerList(section, WindUI)
     for _, v in pairs(game.Players:GetPlayers()) do
         local avatarIcon = "rbxthumb://type=AvatarHeadShot&id=" .. v.UserId .. "&w=150&h=150"

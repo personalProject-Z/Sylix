@@ -1,53 +1,37 @@
-local ServerInfo = {}
-local Players = game:GetService("Players")
-local Stats = game:GetService("Stats")
-local RunService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
+local Module_Server = {}
 
--- // ฟังก์ชันดึง Region ของ Server (ต้องใช้ HTTP)
-function ServerInfo:GetRegion()
-    local success, result = pcall(function()
-        local response = HttpService:JSONDecode(game:HttpGet("http://ip-api.com/json/"))
-        return response.country or "Unknown"
-    end)
-    return success and result or "Locked (No HTTP)"
+function Module_Server.GetPlatform(player)
+    if player == game.Players.LocalPlayer then
+        local UIS = game:GetService("UserInputService")
+        if UIS.TouchEnabled then return "Mobile"
+        elseif UIS.KeyboardEnabled then return "PC"
+        else return "Console" end
+    end
+    return "PC/Mobile"
 end
 
--- // ฟังก์ชันเช็ค Device (ตรวจสอบเบื้องต้นจาก Input)
-function ServerInfo:GetPlayerDevice(player)
-    if not player then return "Unknown" end
-    
-    -- หมายเหตุ: วิธีนี้แม่นยำที่สุดเท่าที่สคริปต์ปกติจะทำได้
-    local guiService = game:GetService("GuiService")
-    if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
-        return "Mobile/Tablet"
-    elseif UserInputService.KeyboardEnabled then
-        return "PC"
-    elseif GuiService:IsTenFootInterface() then
-        return "Console"
-    else
-        return "Unknown"
+function Module_Server.RenderPlayerList(section, WindUI)
+    for _, v in pairs(game.Players:GetPlayers()) do
+        local avatarIcon = "rbxthumb://type=AvatarHeadShot&id=" .. v.UserId .. "&w=150&h=150"
+        local platform = Module_Server.GetPlatform(v)
+
+        section:Paragraph({
+            Title = "Name: " .. v.DisplayName .. " (@" .. v.Name .. ")",
+            Desc = "Device: " .. platform .. "\nID: " .. v.UserId,
+            Image = avatarIcon,
+            ImageSize = 35,
+            Buttons = {
+                {
+                    Icon = "copy",
+                    Title = "Copy ID",
+                    Callback = function()
+                        setclipboard(tostring(v.UserId))
+                        WindUI:Notify({ Title = "Success", Content = "Copied ID: " .. v.Name, Duration = 3 })
+                    end,
+                }
+            }
+        })
     end
 end
 
--- // ฟังก์ชันคำนวณเวลาที่เซิร์ฟเวอร์รันมา
-function ServerInfo:GetServerRunTime()
-    local seconds = math.floor(workspace.DistributedGameTime)
-    local hours = math.floor(seconds / 3600)
-    local mins = math.floor((seconds % 3600) / 60)
-    local secs = seconds % 60
-    return string.format("%02d:%02d:%02d", hours, mins, secs)
-end
-
--- // ฟังก์ชันดึงค่า Ping (หน่วย ms)
-function ServerInfo:GetPing()
-    return math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-end
-
--- // ฟังก์ชันดึงจำนวนผู้เล่น
-function ServerInfo:GetPlayerCount()
-    return #Players:GetPlayers() .. " / " .. Players.MaxPlayers
-end
-
-return ServerInfo
+return Module_Server
